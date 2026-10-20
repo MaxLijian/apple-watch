@@ -338,9 +338,32 @@ function normalizeStage(value: unknown): SleepSegment["stage"] | null {
   return SLEEP_ALIASES[cleanKey(raw)] ?? SLEEP_ALIASES[raw] ?? null;
 }
 
+function coerceRows(value: unknown): unknown[] {
+  if (Array.isArray(value)) return value;
+  if (value && typeof value === "object") return [value];
+  if (typeof value !== "string") return [];
+  const text = value.trim();
+  if (!text) return [];
+  try {
+    const parsed = JSON.parse(text);
+    if (Array.isArray(parsed)) return parsed;
+    if (parsed && typeof parsed === "object") return [parsed];
+  } catch {}
+  const rows: unknown[] = [];
+  for (const line of text.split(/\n+/)) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    try {
+      rows.push(JSON.parse(trimmed));
+    } catch {}
+  }
+  return rows;
+}
+
 function readArray(body: JsonObject, ...keys: string[]): unknown[] {
   for (const key of keys) {
-    if (Array.isArray(body[key])) return body[key] as unknown[];
+    const rows = coerceRows(body[key]);
+    if (rows.length) return rows;
   }
   return [];
 }

@@ -67,6 +67,21 @@ describe("clean-room health payload", () => {
     expect(result.metrics[1].metric).toBe("step_count");
   });
 
+  it("accepts metric lists the Shortcuts JSON body flattens into newline-joined text", () => {
+    const joined = [
+      '{"type":"heart_rate","value":"58","at":"2026-10-20T15:48:40+08:00","unit":"bpm"}',
+      '{"type":"heart_rate","value":"56","at":"2026-10-20T15:44:20+08:00","unit":"bpm"}',
+    ].join("\n");
+    const result = normalizeIngestPayload({ metrics: joined });
+
+    expect(result.errors).toEqual([]);
+    expect(result.metrics).toHaveLength(2);
+    expect(result.metrics[0]).toMatchObject({
+      metric: "heart_rate",
+      value: 58,
+    });
+  });
+
   it("accepts Chinese sleep stages and totals detailed stages once", () => {
     const normalized = normalizeIngestPayload({
       sleep: [
